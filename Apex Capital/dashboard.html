@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Apex Capital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a0f1e; --navy-mid: #111827; --navy-light: #1a2540;
+    --gold: #c9a84c; --gold-light: #e8c96a; --gold-pale: #f5e6b8;
+    --cream: #f7f3ea; --white: #ffffff; --gray: #8a9ab5;
+    --border: rgba(201,168,76,0.2); --green: #4caf82; --red: #e05c5c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--navy); color:var(--cream); font-family:'DM Sans',sans-serif; font-weight:300; min-height:100vh; }
+
+  /* NAV */
+  nav { position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; padding:18px 60px; background:rgba(10,15,30,0.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+  .logo { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:500; letter-spacing:3px; text-transform:uppercase; color:var(--gold); text-decoration:none; }
+  .logo span { color:var(--cream); }
+  .nav-right { display:flex; align-items:center; gap:24px; }
+  .nav-badge { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); border:1px solid var(--border); padding:4px 12px; }
+  .nav-user { display:flex; align-items:center; gap:12px; }
+  .nav-avatar { width:34px; height:34px; border-radius:50%; border:1px solid var(--gold); object-fit:cover; }
+  .nav-avatar-placeholder { width:34px; height:34px; border-radius:50%; border:1px solid var(--gold); background:var(--navy-light); display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:14px; color:var(--gold); }
+  .nav-user-name { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--cream); }
+  .btn-logout { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gray); border:1px solid var(--border); padding:7px 14px; background:none; cursor:pointer; transition:color .3s,border-color .3s; text-decoration:none; }
+  .btn-logout:hover { color:var(--red); border-color:var(--red); }
+
+  /* LAYOUT */
+  .dash-wrap { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 65px); }
+
+  /* SIDEBAR */
+  .sidebar { background:var(--navy-mid); border-right:1px solid var(--border); padding:32px 0; }
+  .sidebar-section { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--gray); padding:0 24px; margin:24px 0 10px; }
+  .sidebar-section:first-child { margin-top:0; }
+  .sidebar-link { display:flex; align-items:center; gap:12px; padding:11px 24px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--gray); text-decoration:none; transition:background .2s,color .2s; cursor:pointer; border:none; background:none; width:100%; text-align:left; }
+  .sidebar-link:hover { background:rgba(201,168,76,.05); color:var(--cream); }
+  .sidebar-link.active { background:rgba(201,168,76,.08); color:var(--gold); border-right:2px solid var(--gold); }
+  .sidebar-icon { font-size:15px; opacity:.7; }
+
+  /* MAIN */
+  main { padding:40px 52px; }
+  .dash-header { margin-bottom:40px; }
+  .dash-greeting { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+  .dash-title { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:300; }
+  .dash-subtitle { font-family:'DM Mono',monospace; font-size:11px; color:var(--gray); margin-top:4px; }
+  .section-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:16px; }
+
+  /* BALANCE CARDS */
+  .balance-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:36px; }
+  .bal-card { background:var(--navy-mid); border:1px solid var(--border); padding:24px 22px; position:relative; overflow:hidden; transition:border-color .3s; }
+  .bal-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:2px; background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform .4s ease; }
+  .bal-card:hover { border-color:rgba(201,168,76,.4); }
+  .bal-card:hover::before { transform:scaleX(1); }
+  .bal-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gray); margin-bottom:10px; }
+  .bal-amount { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:400; color:var(--white); line-height:1.1; }
+  .bal-sub { font-family:'DM Mono',monospace; font-size:11px; color:var(--gray); margin-top:6px; }
+  .bal-change { font-family:'DM Mono',monospace; font-size:11px; margin-top:4px; }
+  .up { color:var(--green); } .dn { color:var(--red); }
+
+  /* TWO-COL GRID */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:36px; }
+  .panel { background:var(--navy-mid); border:1px solid var(--border); padding:28px 26px; }
+  .panel h3 { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:400; margin-bottom:18px; }
+
+  /* ALLOCATION */
+  .alloc-row { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .alloc-name { font-family:'DM Mono',monospace; font-size:11px; color:var(--cream); width:90px; flex-shrink:0; }
+  .alloc-bar-wrap { flex:1; height:4px; background:var(--navy-light); border-radius:2px; overflow:hidden; }
+  .alloc-bar { height:100%; border-radius:2px; background:var(--gold); }
+  .alloc-pct { font-family:'DM Mono',monospace; font-size:11px; color:var(--gray); width:36px; text-align:right; }
+
+  /* RECENT TX */
+  .tx-mini { width:100%; border-collapse:collapse; }
+  .tx-mini th { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--gray); padding:0 0 12px; text-align:left; border-bottom:1px solid var(--border); font-weight:400; }
+  .tx-mini td { font-family:'DM Mono',monospace; font-size:11px; padding:12px 0; border-bottom:1px solid rgba(201,168,76,.05); }
+  .tx-mini tr:last-child td { border-bottom:none; }
+  .tx-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:7px; }
+  .status-badge { font-size:9px; letter-spacing:1px; padding:3px 8px; }
+  .s-completed { background:rgba(76,175,130,.12); color:var(--green); border:1px solid rgba(76,175,130,.25); }
+  .s-pending   { background:rgba(201,168,76,.1); color:var(--gold); border:1px solid rgba(201,168,76,.25); }
+  /* DEPOSIT ASSET PICKER */
+  .dep-asset-btn { background:var(--navy-light); border:1px solid var(--border); color:var(--gray); padding:10px 4px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; cursor:pointer; transition:all .2s; width:100%; }
+  .dep-asset-btn:hover { border-color:rgba(201,168,76,.4); color:var(--cream); }
+  .dep-asset-active { background:rgba(201,168,76,.12); border-color:var(--gold); color:var(--gold); }
+
+
+  /* QUICK ACTIONS */
+  .actions-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:36px; }
+  .action-btn { background:var(--navy-mid); border:1px solid var(--border); padding:20px 16px; text-align:center; cursor:pointer; transition:border-color .3s,background .3s; text-decoration:none; display:block; }
+  .action-btn:hover { border-color:rgba(201,168,76,.5); background:rgba(201,168,76,.04); }
+  .action-icon { font-size:22px; color:var(--gold); margin-bottom:10px; opacity:.8; }
+  .action-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gray); }
+
+  /* PROFILE CARD */
+  .profile-strip { display:flex; align-items:center; gap:20px; background:var(--navy-mid); border:1px solid var(--border); padding:22px 28px; margin-bottom:36px; }
+  .profile-avatar { width:56px; height:56px; border-radius:50%; border:1px solid var(--gold); object-fit:cover; flex-shrink:0; }
+  .profile-avatar-placeholder { width:56px; height:56px; border-radius:50%; border:1px solid var(--gold); background:var(--navy-light); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--gold); flex-shrink:0; }
+  .profile-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:400; }
+  .profile-email { font-family:'DM Mono',monospace; font-size:11px; color:var(--gray); margin-top:2px; }
+  .profile-meta { margin-left:auto; display:flex; gap:32px; }
+  .profile-stat { text-align:right; }
+  .profile-stat-val { font-family:'DM Mono',monospace; font-size:12px; color:var(--cream); }
+  .profile-stat-lbl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray); margin-top:2px; }
+
+  /* LOADING STATE */
+  #loading-state { display:flex; align-items:center; justify-content:center; min-height:60vh; flex-direction:column; gap:16px; }
+  .spinner { width:36px; height:36px; border:2px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #dashboard-content { display:none; }
+
+  @media(max-width:900px) {
+    nav { padding:16px 24px; }
+    .dash-wrap { grid-template-columns:1fr; }
+    .sidebar { display:none; }
+    main { padding:24px; }
+    .balance-grid { grid-template-columns:1fr 1fr; }
+    .two-col { grid-template-columns:1fr; }
+    .actions-grid { grid-template-columns:1fr 1fr; }
+    .profile-meta { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="logo">Apex<span>Capital</span></a>
+  <div class="nav-right">
+    <span class="nav-badge">Client Portal</span>
+    <div class="nav-user" id="nav-user">
+      <div class="nav-avatar-placeholder">·</div>
+    </div>
+    <a href="/.netlify/functions/auth-logout" class="btn-logout">Sign Out</a>
+  </div>
+</nav>
+
+<!-- LOADING -->
+<div id="loading-state">
+  <div class="spinner"></div>
+  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gray)">LOADING YOUR PORTFOLIO</span>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-content">
+  <div class="dash-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="section-label" style="padding:0 24px">Navigation</div>
+      <a class="sidebar-link active" onclick="showPanel('overview')"><span class="sidebar-icon">◈</span> Overview</a>
+      <a class="sidebar-link" onclick="showPanel('portfolio')"><span class="sidebar-icon">◉</span> Portfolio</a>
+      <a class="sidebar-link" onclick="showPanel('deposit')"><span class="sidebar-icon">⬆</span> Deposit</a>
+      <a class="sidebar-link" onclick="showPanel('withdraw')"><span class="sidebar-icon">⬇</span> Withdraw</a>
+      <a class="sidebar-link" onclick="showPanel('history')"><span class="sidebar-icon">≡</span> History</a>
+      <div class="sidebar-section">Account</div>
+      <a class="sidebar-link" onclick="showPanel('profile')"><span class="sidebar-icon">⬡</span> Profile</a>
+      <a class="sidebar-link" href="/.netlify/functions/auth-logout"><span class="sidebar-icon">◎</span> Sign Out</a>
+      <div style="margin-top:auto;padding:24px;margin-top:60px">
+        <div style="border:1px solid var(--border);padding:16px;font-size:12px;color:var(--gray);line-height:1.6">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gold);margin-bottom:8px">MARKET STATUS</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:10px">Markets Open</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main>
+      <!-- OVERVIEW PANEL -->
+      <div id="panel-overview">
+        <div class="dash-header">
+          <div class="dash-greeting">Welcome back</div>
+          <h1 class="dash-title" id="user-name-heading">—</h1>
+          <div class="dash-subtitle" id="user-email-sub">—</div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-label">Quick Actions</div>
+        <div class="actions-grid">
+          <a class="action-btn" onclick="showPanel('deposit')">
+            <div class="action-icon">⬆</div>
+            <div class="action-label">Deposit</div>
+          </a>
+          <a class="action-btn" onclick="showPanel('withdraw')">
+            <div class="action-icon">⬇</div>
+            <div class="action-label">Withdraw</div>
+          </a>
+          <a class="action-btn" onclick="showPanel('portfolio')">
+            <div class="action-icon">◈</div>
+            <div class="action-label">Portfolio</div>
+          </a>
+          <a class="action-btn" onclick="showPanel('history')">
+            <div class="action-icon">≡</div>
+            <div class="action-label">History</div>
+          </a>
+        </div>
+
+        <!-- Balance Cards -->
+        <div class="section-label">Portfolio Summary</div>
+        <div class="balance-grid">
+          <div class="bal-card">
+            <div class="bal-label">Total Value</div>
+            <div class="bal-amount">$284,750</div>
+            <div class="bal-sub">≈ 4.22 BTC</div>
+            <div class="bal-change up">▲ +12.4% this month</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-label">Available</div>
+            <div class="bal-amount">$42,180</div>
+            <div class="bal-sub">Ready to deploy</div>
+            <div class="bal-change" style="color:var(--gray)">— Not deployed</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-label">Invested</div>
+            <div class="bal-amount">$242,570</div>
+            <div class="bal-sub">Across 3 strategies</div>
+            <div class="bal-change up">▲ +$26,840 P&L</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-label">Total Returns</div>
+            <div class="bal-amount" style="color:var(--green)">+$34,750</div>
+            <div class="bal-sub">Since inception</div>
+            <div class="bal-change up">▲ +13.9% ROI</div>
+          </div>
+        </div>
+
+        <!-- Two-col: allocation + recent tx -->
+        <div class="two-col">
+          <div class="panel">
+            <h3>Strategy Allocation</h3>
+            <div class="alloc-row"><span class="alloc-name">Long/Short</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:42%"></div></div><span class="alloc-pct">42%</span></div>
+            <div class="alloc-row"><span class="alloc-name">DeFi Yield</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:28%;background:#6495ed"></div></div><span class="alloc-pct">28%</span></div>
+            <div class="alloc-row"><span class="alloc-name">Quant Arb</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:18%;background:#4caf82"></div></div><span class="alloc-pct">18%</span></div>
+            <div class="alloc-row"><span class="alloc-name">Cash</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:12%;background:#8a9ab5"></div></div><span class="alloc-pct">12%</span></div>
+          </div>
+          <div class="panel">
+            <h3>Recent Transactions</h3>
+            <table class="tx-mini">
+              <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--gray)">Feb 18</td><td><span class="tx-dot" style="background:var(--green)"></span>Deposit</td><td style="color:var(--green)">+$16,518</td><td><span class="status-badge s-completed">done</span></td></tr>
+                <tr><td style="color:var(--gray)">Feb 15</td><td><span class="tx-dot" style="background:var(--red)"></span>Withdraw</td><td style="color:var(--red)">-$5,000</td><td><span class="status-badge s-completed">done</span></td></tr>
+                <tr><td style="color:var(--gray)">Feb 10</td><td><span class="tx-dot" style="background:var(--green)"></span>Deposit</td><td style="color:var(--green)">+$7,160</td><td><span class="status-badge s-completed">done</span></td></tr>
+                <tr><td style="color:var(--gray)">Feb 05</td><td><span class="tx-dot" style="background:var(--red)"></span>Withdraw</td><td style="color:var(--red)">-$6,742</td><td><span class="status-badge s-pending">pending</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE PANEL -->
+      <div id="panel-profile" style="display:none">
+        <div class="dash-header">
+          <div class="dash-greeting">Account</div>
+          <h1 class="dash-title">Your Profile</h1>
+        </div>
+        <div class="profile-strip">
+          <div id="profile-avatar-wrap"></div>
+          <div>
+            <div class="profile-name" id="profile-name">—</div>
+            <div class="profile-email" id="profile-email">—</div>
+          </div>
+          <div class="profile-meta">
+            <div class="profile-stat"><div class="profile-stat-val">Client</div><div class="profile-stat-lbl">Account Type</div></div>
+            <div class="profile-stat"><div class="profile-stat-val">Verified ✓</div><div class="profile-stat-lbl">KYC Status</div></div>
+            <div class="profile-stat"><div class="profile-stat-val">Feb 2024</div><div class="profile-stat-lbl">Member Since</div></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:24px">
+          <h3>Account Details</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px">
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:6px">FULL NAME</div>
+              <div id="detail-name" style="font-size:15px">—</div>
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:6px">EMAIL ADDRESS</div>
+              <div id="detail-email" style="font-size:15px">—</div>
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:6px">AUTH PROVIDER</div>
+              <div style="font-size:15px">Auth0 / SSO</div>
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:6px">SESSION</div>
+              <div style="font-size:15px;color:var(--green)">Active (8h)</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px">
+          <a href="/.netlify/functions/auth-logout" class="btn-logout" style="display:inline-block">Sign Out of All Sessions</a>
+        </div>
+      </div>
+
+      <!-- DEPOSIT PANEL -->
+      <div id="panel-deposit" style="display:none">
+        <div class="dash-header"><div class="dash-greeting">Funds</div><h1 class="dash-title">Deposit</h1></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div>
+            <!-- STEP 1 -->
+            <div class="panel" id="dep-step-1">
+              <h3 style="margin-bottom:6px">Deposit via Coinbase Commerce</h3>
+              <p style="color:var(--gray);font-size:13px;line-height:1.6;margin-bottom:24px">Minimum: <span style="color:var(--gold)">$500 USD</span>. Credited after network confirmation. Powered by Coinbase Commerce.</p>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div>
+                  <label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:8px">ASSET</label>
+                  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+                    <button onclick="selectDepAsset('BTC',this)" class="dep-asset-btn dep-asset-active">BTC</button>
+                    <button onclick="selectDepAsset('ETH',this)" class="dep-asset-btn">ETH</button>
+                    <button onclick="selectDepAsset('USDT',this)" class="dep-asset-btn">USDT</button>
+                    <button onclick="selectDepAsset('USDC',this)" class="dep-asset-btn">USDC</button>
+                    <button onclick="selectDepAsset('SOL',this)" class="dep-asset-btn">SOL</button>
+                  </div>
+                </div>
+                <div>
+                  <label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:6px">AMOUNT (USD)</label>
+                  <input type="number" id="dep-amount-usd" placeholder="500.00" min="500" step="1" oninput="updateCryptoPreview()"
+                    style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+                  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-top:6px" id="dep-crypto-preview"></div>
+                </div>
+              </div>
+              <div id="dep-error" style="display:none;margin-top:14px;padding:10px 14px;border:1px solid rgba(224,92,92,.3);background:rgba(224,92,92,.06);font-family:'DM Mono',monospace;font-size:11px;color:var(--red)"></div>
+              <button onclick="createDepositCharge()" id="dep-generate-btn"
+                style="margin-top:20px;width:100%;background:var(--gold);color:var(--navy);border:none;padding:14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer">
+                Generate Deposit Address
+              </button>
+              <p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-top:12px;line-height:1.6;text-align:center">Address expires in 60 minutes. Do not reuse addresses.</p>
+            </div>
+
+            <!-- STEP 2: address + polling -->
+            <div class="panel" id="dep-step-2" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                <h3>Send Payment</h3>
+                <button onclick="resetDepositFlow()" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);background:none;border:1px solid var(--border);padding:5px 12px;cursor:pointer">← New</button>
+              </div>
+              <div id="dep-status-banner" style="padding:12px 16px;margin-bottom:20px;font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border);background:rgba(201,168,76,.05);color:var(--gold)">⏳ Waiting for payment…</div>
+              <div style="background:var(--navy-light);border:1px solid var(--border);padding:20px;margin-bottom:16px;text-align:center">
+                <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:8px">SEND EXACTLY</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--gold)" id="dep-crypto-amount">—</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray);margin-top:4px" id="dep-usd-equiv">—</div>
+              </div>
+              <div style="margin-bottom:16px">
+                <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:8px" id="dep-network-label">DEPOSIT ADDRESS</div>
+                <div style="display:flex;gap:8px;align-items:stretch">
+                  <div id="dep-address-display" style="font-family:'DM Mono',monospace;font-size:11px;background:var(--navy-light);border:1px solid var(--border);padding:12px 14px;flex:1;word-break:break-all;color:var(--cream);line-height:1.6">—</div>
+                  <button onclick="copyAddress()" style="background:var(--navy-light);border:1px solid var(--border);color:var(--gold);padding:12px 14px;cursor:pointer;font-size:16px;flex-shrink:0" title="Copy">⎘</button>
+                </div>
+                <div id="dep-copy-confirm" style="display:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--green);margin-top:4px">✓ Copied</div>
+              </div>
+              <a id="dep-hosted-link" href="#" target="_blank" style="display:block;text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--navy);background:var(--gold);padding:12px;text-decoration:none;margin-bottom:16px">Open Coinbase Commerce Page ↗</a>
+              <div style="background:var(--navy-light);border:1px solid var(--border);padding:16px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray)">CONFIRMATIONS</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:11px" id="dep-confirm-count">0 / —</span>
+                </div>
+                <div style="height:4px;background:var(--navy);border-radius:2px"><div id="dep-confirm-bar" style="height:100%;background:var(--gold);border-radius:2px;width:0%;transition:width .5s ease"></div></div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);text-align:center;margin-top:14px">Address expires in <span id="dep-expires-in" style="color:var(--gold)">—</span></div>
+            </div>
+
+            <!-- STEP 3: success -->
+            <div class="panel" id="dep-step-3" style="display:none">
+              <div style="text-align:center;padding:40px 20px">
+                <div style="font-size:48px;margin-bottom:20px">✓</div>
+                <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--green);margin-bottom:12px">Deposit Confirmed</h3>
+                <p style="color:var(--gray);font-size:13px;line-height:1.7;margin-bottom:8px" id="dep-success-msg"></p>
+                <button onclick="resetDepositFlow()" style="margin-top:28px;background:var(--gold);color:var(--navy);border:none;padding:12px 28px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer">Make Another Deposit</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: balances + how it works -->
+          <div class="panel" style="background:rgba(10,15,30,.4)">
+            <h3>Your Balances</h3>
+            <div id="balance-list" style="margin-top:4px">
+              <div style="color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">Loading…</div>
+            </div>
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+              <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);margin-bottom:12px">HOW IT WORKS</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:12px"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);flex-shrink:0">01</div><div style="font-size:12px;color:var(--gray);line-height:1.5">Select asset and USD amount, click Generate Address</div></div>
+                <div style="display:flex;gap:12px"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);flex-shrink:0">02</div><div style="font-size:12px;color:var(--gray);line-height:1.5">Send exact crypto amount to the generated address within 60 minutes</div></div>
+                <div style="display:flex;gap:12px"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);flex-shrink:0">03</div><div style="font-size:12px;color:var(--gray);line-height:1.5">Balance credited automatically after network confirmations</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WITHDRAW PANEL -->
+      <div id="panel-withdraw" style="display:none">
+        <div class="dash-header"><div class="dash-greeting">Funds</div><h1 class="dash-title">Withdraw</h1></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div class="panel">
+            <h3>Withdraw Funds</h3>
+            <p style="color:var(--gray);font-size:13px;line-height:1.6;margin-bottom:24px">Processing: <span style="color:var(--gold)">1–3 business days</span>. Minimum: $100 USD equivalent. Platform fee: 0.1%.</p>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div><label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:6px">ASSET</label>
+                <select id="wd-asset" style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+                  <option value="BTC">Bitcoin (BTC)</option><option value="ETH">Ethereum (ETH)</option>
+                  <option value="USDT">Tether (USDT)</option><option value="USDC">USD Coin (USDC)</option><option value="SOL">Solana (SOL)</option>
+                </select></div>
+              <div><label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:6px">AMOUNT</label>
+                <input type="number" id="wd-amount" placeholder="0.00" step="any" min="0"
+                  style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"></div>
+              <div><label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:6px">DESTINATION ADDRESS</label>
+                <input type="text" id="wd-address" placeholder="Wallet address"
+                  style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"></div>
+              <div><label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);display:block;margin-bottom:6px">NETWORK</label>
+                <input type="text" id="wd-network" placeholder="e.g. Bitcoin Mainnet"
+                  style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"></div>
+            </div>
+            <div id="wd-error" style="display:none;margin-top:12px;padding:10px 14px;border:1px solid rgba(224,92,92,.3);background:rgba(224,92,92,.06);font-family:'DM Mono',monospace;font-size:11px;color:var(--red)"></div>
+            <button onclick="submitWithdrawal()"
+              style="margin-top:20px;width:100%;background:transparent;color:var(--gold);border:1px solid var(--gold);padding:14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer">
+              Request Withdrawal
+            </button>
+            <div id="wd-success" style="display:none;margin-top:16px;padding:14px;border:1px solid rgba(76,175,130,.3);background:rgba(76,175,130,.06);font-family:'DM Mono',monospace;font-size:11px;color:var(--green)"></div>
+          </div>
+          <div class="panel" style="background:rgba(10,15,30,.4)">
+            <h3>Your Balances</h3>
+            <div id="wd-balance-list" style="margin-top:4px">
+              <div style="color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY PANEL -->
+      <div id="panel-history" style="display:none">
+        <div class="dash-header"><div class="dash-greeting">Records</div><h1 class="dash-title">Transaction History</h1></div>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <select id="hist-type" onchange="loadHistory(1)" style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;outline:none">
+                <option value="">All Types</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option>
+              </select>
+              <select id="hist-asset" onchange="loadHistory(1)" style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;outline:none">
+                <option value="">All Assets</option><option value="BTC">BTC</option><option value="ETH">ETH</option>
+                <option value="USDT">USDT</option><option value="USDC">USDC</option><option value="SOL">SOL</option>
+              </select>
+              <select id="hist-status" onchange="loadHistory(1)" style="background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;outline:none">
+                <option value="">All Statuses</option><option value="pending">Pending</option>
+                <option value="processing">Processing</option><option value="completed">Completed</option><option value="failed">Failed</option>
+              </select>
+            </div>
+            <div id="hist-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray)"></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 0 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">Date</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 12px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">Type</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 12px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">Asset</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 12px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">Amount</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 12px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">USD Value</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:0 0 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400">Status</th>
+            </tr></thead>
+            <tbody id="hist-rows"><tr><td colspan="6" style="padding:24px 0;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">Loading…</td></tr></tbody>
+          </table>
+          <div id="hist-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:20px"></div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO PANEL -->
+      <div id="panel-portfolio" style="display:none">
+        <div class="dash-header"><div class="dash-greeting">Investments</div><h1 class="dash-title">Portfolio</h1></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px" id="portfolio-balance-cards">
+          <div style="background:var(--navy-mid);border:1px solid var(--border);padding:24px 22px"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Total Value</div><div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white)" id="p-total">—</div></div>
+          <div style="background:var(--navy-mid);border:1px solid var(--border);padding:24px 22px"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Invested</div><div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white)" id="p-invested">—</div></div>
+          <div style="background:var(--navy-mid);border:1px solid var(--border);padding:24px 22px"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Available</div><div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white)" id="p-available">—</div></div>
+          <div style="background:var(--navy-mid);border:1px solid var(--border);padding:24px 22px"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Total Return</div><div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--green)" id="p-return">—</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div class="panel"><h3>Asset Breakdown</h3><div id="asset-breakdown" style="margin-top:8px"></div></div>
+          <div class="panel"><h3>Strategy Allocation</h3><div id="strategy-breakdown" style="margin-top:8px"></div></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+const fmt = {
+  usd:    n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }),
+  asset:  (n, sym) => Number(n).toFixed(['BTC','ETH','SOL'].includes(sym) ? 6 : 2) + ' ' + sym,
+  date:   s => new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }),
+  status: s => ({ pending:'🟡 Pending', processing:'🔵 Processing', completed:'🟢 Completed', failed:'🔴 Failed', cancelled:'⚫ Cancelled' }[s] || s),
+};
+
+let _userId = null;
+
+// ── Auth guard + boot ─────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res  = await fetch('/.netlify/functions/auth-user', { credentials: 'include' });
+    const json = await res.json();
+    if (!json.ok || !json.user) { location.href = '/?auth_required=1'; return; }
+
+    // Provision user row in DB (idempotent)
+    await fetch('/.netlify/functions/ledger-provision-user', { method:'POST', credentials:'include' });
+    loadLivePrices();
+
+    populateNav(json.user);
+    await loadOverview();
+    showDashboard();
+  } catch {
+    location.href = '/?auth_required=1';
+  }
+}
+
+function showDashboard() {
+  document.getElementById('loading-state').style.display    = 'none';
+  document.getElementById('dashboard-content').style.display = 'block';
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function populateNav(user) {
+  const navUser = document.getElementById('nav-user');
+  const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+  navUser.innerHTML = user.picture
+    ? `<img src="${user.picture}" class="nav-avatar"><span class="nav-user-name">${user.name || user.email}</span>`
+    : `<div class="nav-avatar-placeholder">${initials}</div><span class="nav-user-name">${user.name || user.email}</span>`;
+
+  document.getElementById('user-name-heading').textContent = user.name || user.email;
+  document.getElementById('user-email-sub').textContent    = user.email || '';
+
+  // Profile panel
+  const wrap = document.getElementById('profile-avatar-wrap');
+  wrap.innerHTML = user.picture
+    ? `<img src="${user.picture}" class="profile-avatar">`
+    : `<div class="profile-avatar-placeholder">${initials}</div>`;
+  document.getElementById('profile-name').textContent  = user.name  || '—';
+  document.getElementById('profile-email').textContent = user.email || '—';
+  document.getElementById('detail-name').textContent   = user.name  || '—';
+  document.getElementById('detail-email').textContent  = user.email || '—';
+}
+
+// ── Overview (live balances + recent tx) ──────────────────────────────────────
+async function loadOverview() {
+  try {
+    const [balRes, txRes] = await Promise.all([
+      fetch('/.netlify/functions/ledger-balance',             { credentials:'include' }),
+      fetch('/.netlify/functions/ledger-transaction-history?limit=4', { credentials:'include' }),
+    ]);
+    const balJson = await balRes.json();
+    const txJson  = await txRes.json();
+
+    if (balJson.ok) renderOverviewBalances(balJson);
+    if (txJson.ok)  renderRecentTx(txJson.transactions);
+  } catch (e) {
+    console.warn('loadOverview error', e);
+  }
+}
+
+function renderOverviewBalances(data) {
+  const { totals } = data;
+  // Update the 4 balance cards
+  const cards = document.querySelectorAll('#panel-overview .bal-amount');
+  if (cards[0]) cards[0].textContent = fmt.usd(totals.total_usd);
+  if (cards[1]) cards[1].textContent = fmt.usd(totals.available_usd);
+  if (cards[2]) cards[2].textContent = fmt.usd(totals.invested_usd);
+  if (cards[3]) { cards[3].textContent = '+' + fmt.usd(totals.total_return_usd); }
+
+  // Allocation bars
+  if (data.allocations?.length) {
+    const container = document.querySelector('.alloc-row')?.parentElement;
+    if (container) {
+      container.innerHTML = data.allocations.map(a => `
+        <div class="alloc-row">
+          <span class="alloc-name">${a.strategy.replace('_',' ')}</span>
+          <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:${a.pct||0}%"></div></div>
+          <span class="alloc-pct">${a.pct||0}%</span>
+        </div>`).join('');
+    }
+  }
+}
+
+function renderRecentTx(txs) {
+  const tbody = document.querySelector('.tx-mini tbody');
+  if (!tbody) return;
+  if (!txs.length) { tbody.innerHTML = `<tr><td colspan="4" style="color:var(--gray);padding:16px 0;font-family:'DM Mono',monospace;font-size:11px">No transactions yet</td></tr>`; return; }
+  tbody.innerHTML = txs.map(t => {
+    const isIn = t.type === 'deposit';
+    return `<tr>
+      <td style="color:var(--gray)">${fmt.date(t.created_at)}</td>
+      <td><span class="tx-dot" style="background:${isIn?'var(--green)':'var(--red)'}"></span>${t.type}</td>
+      <td style="color:${isIn?'var(--green)':'var(--red)'}">${isIn?'+':'-'}${t.usd_value ? fmt.usd(t.usd_value) : fmt.asset(t.amount, t.asset)}</td>
+      <td><span class="status-badge ${t.status==='completed'?'s-completed':'s-pending'}">${t.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Balance list (shared by deposit + withdraw panels) ────────────────────────
+async function renderBalanceList(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  try {
+    const res  = await fetch('/.netlify/functions/ledger-balance', { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error();
+    el.innerHTML = data.balances
+      .filter(b => b.amount > 0 || true) // show all
+      .map(b => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(201,168,76,.07)">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold)">${b.asset}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray);margin-top:2px">${b.usd_value!=null ? fmt.usd(b.usd_value) : '—'}</div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;text-align:right">${fmt.asset(b.amount, b.asset)}</div>
+        </div>`).join('');
+  } catch {
+    el.innerHTML = `<div style="color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">Could not load balances</div>`;
+  }
+}
+
+// ── Deposit submission ────────────────────────────────────────────────────────
+// ── Deposit: Coinbase Commerce flow ──────────────────────────────────────────
+let _depAsset    = 'BTC';
+let _depChargeId = null;
+let _depPollTimer = null;
+let _depExpiryTimer = null;
+let _livePrices  = {};
+
+function selectDepAsset(asset, btn) {
+  _depAsset = asset;
+  document.querySelectorAll('.dep-asset-btn').forEach(b => b.classList.remove('dep-asset-active'));
+  btn.classList.add('dep-asset-active');
+  updateCryptoPreview();
+}
+
+function updateCryptoPreview() {
+  const usd = parseFloat(document.getElementById('dep-amount-usd').value);
+  const el  = document.getElementById('dep-crypto-preview');
+  if (!usd || isNaN(usd) || !_livePrices[_depAsset]) { el.textContent = ''; return; }
+  const crypto = (usd / _livePrices[_depAsset]).toFixed(_depAsset === 'BTC' ? 8 : 6);
+  el.textContent = `≈ ${crypto} ${_depAsset}`;
+}
+
+async function loadLivePrices() {
+  try {
+    const res  = await fetch('/.netlify/functions/crypto-prices', { credentials:'include' });
+    const data = await res.json();
+    if (data.ok) data.data.forEach(c => { _livePrices[c.sym] = c.priceRaw; });
+    _livePrices['USDT'] = _livePrices['USDT'] || 1;
+    _livePrices['USDC'] = _livePrices['USDC'] || 1;
+  } catch {}
+}
+
+async function createDepositCharge() {
+  const amountUsd = parseFloat(document.getElementById('dep-amount-usd').value);
+  const errEl     = document.getElementById('dep-error');
+  const btn       = document.getElementById('dep-generate-btn');
+  errEl.style.display = 'none';
+
+  if (!amountUsd || amountUsd < 500) {
+    errEl.textContent = 'Minimum deposit is $500 USD.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.textContent = 'Generating…'; btn.disabled = true;
+
+  try {
+    const res  = await fetch('/.netlify/functions/deposit-create', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asset: _depAsset, amount_usd: amountUsd }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to generate address');
+
+    _depChargeId = data.charge_id;
+    showDepStep2(data);
+    startDepositPolling(data.charge_id);
+    startExpiryCountdown(data.expires_at);
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent = 'Generate Deposit Address'; btn.disabled = false;
+  }
+}
+
+function showDepStep2(data) {
+  document.getElementById('dep-step-1').style.display = 'none';
+  document.getElementById('dep-step-2').style.display = 'block';
+
+  const networks = { BTC:'Bitcoin Mainnet', ETH:'Ethereum (ERC-20)', USDT:'Ethereum (ERC-20)', USDC:'Ethereum (ERC-20)', SOL:'Solana Mainnet' };
+  document.getElementById('dep-network-label').textContent = `${networks[data.asset] || data.asset} ADDRESS`;
+  document.getElementById('dep-address-display').textContent = data.deposit_address || 'See Coinbase Commerce page';
+  document.getElementById('dep-hosted-link').href = data.hosted_url || '#';
+  document.getElementById('dep-crypto-amount').textContent = data.crypto_amount ? `${parseFloat(data.crypto_amount).toFixed(data.asset==='BTC'?8:6)} ${data.asset}` : `${data.asset}`;
+  document.getElementById('dep-usd-equiv').textContent = `≈ $${Number(data.amount_usd).toLocaleString('en-US',{minimumFractionDigits:2})} USD`;
+  document.getElementById('dep-confirm-count').textContent = `0 / ${data.confirm_threshold}`;
+}
+
+function copyAddress() {
+  const addr = document.getElementById('dep-address-display').textContent;
+  navigator.clipboard.writeText(addr).then(() => {
+    const el = document.getElementById('dep-copy-confirm');
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 2500);
+  });
+}
+
+function startDepositPolling(chargeId) {
+  clearInterval(_depPollTimer);
+  _depPollTimer = setInterval(() => pollDepositStatus(chargeId), 8000);
+}
+
+async function pollDepositStatus(chargeId) {
+  try {
+    const res  = await fetch(`/.netlify/functions/deposit-status?charge_id=${chargeId}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) return;
+    const c = data.charge;
+
+    const banner  = document.getElementById('dep-status-banner');
+    const confBar = document.getElementById('dep-confirm-bar');
+    const confCnt = document.getElementById('dep-confirm-count');
+
+    confCnt.textContent = `${c.confirmations} / ${c.confirm_threshold}`;
+    const pct = Math.min(100, (c.confirmations / c.confirm_threshold) * 100);
+    confBar.style.width = pct + '%';
+
+    if (c.is_complete) {
+      clearInterval(_depPollTimer);
+      clearInterval(_depExpiryTimer);
+      document.getElementById('dep-step-2').style.display = 'none';
+      document.getElementById('dep-step-3').style.display = 'block';
+      document.getElementById('dep-success-msg').textContent =
+        `${c.crypto_amount} ${c.asset} ($${Number(c.amount_usd).toLocaleString()}) has been credited to your account.`;
+      renderBalanceList('balance-list');
+      loadOverview();
+    } else if (c.is_detected) {
+      banner.style.color      = 'var(--blue)';
+      banner.style.borderColor = 'rgba(100,149,237,.3)';
+      banner.textContent = `🔵 Payment detected — waiting for confirmations (${c.confirmations}/${c.confirm_threshold})…`;
+    } else if (c.is_failed) {
+      clearInterval(_depPollTimer);
+      banner.style.color      = 'var(--red)';
+      banner.style.borderColor = 'rgba(224,92,92,.3)';
+      banner.textContent = '✕ Deposit expired or failed. Please start a new deposit.';
+    }
+  } catch {}
+}
+
+function startExpiryCountdown(expiresAt) {
+  clearInterval(_depExpiryTimer);
+  const expiry = new Date(expiresAt);
+  _depExpiryTimer = setInterval(() => {
+    const ms   = expiry - Date.now();
+    const el   = document.getElementById('dep-expires-in');
+    if (ms <= 0) { el.textContent = 'Expired'; el.style.color = 'var(--red)'; clearInterval(_depExpiryTimer); return; }
+    const mins = Math.floor(ms / 60000);
+    const secs = Math.floor((ms % 60000) / 1000);
+    el.textContent = `${mins}m ${secs}s`;
+    el.style.color = ms < 5 * 60000 ? 'var(--red)' : 'var(--gold)';
+  }, 1000);
+}
+
+function resetDepositFlow() {
+  clearInterval(_depPollTimer);
+  clearInterval(_depExpiryTimer);
+  _depChargeId = null;
+  document.getElementById('dep-step-1').style.display = 'block';
+  document.getElementById('dep-step-2').style.display = 'none';
+  document.getElementById('dep-step-3').style.display = 'none';
+  document.getElementById('dep-error').style.display  = 'none';
+  document.getElementById('dep-amount-usd').value     = '';
+  document.getElementById('dep-crypto-preview').textContent = '';
+}
+
+// ── Withdrawal submission ─────────────────────────────────────────────────────
+async function submitWithdrawal() {
+  const asset   = document.getElementById('wd-asset').value;
+  const amount  = parseFloat(document.getElementById('wd-amount').value);
+  const address = document.getElementById('wd-address').value.trim();
+  const network = document.getElementById('wd-network').value.trim();
+  const errEl   = document.getElementById('wd-error');
+  const sucEl   = document.getElementById('wd-success');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display='block'; return; }
+  if (!address)               { errEl.textContent = 'Destination address is required.'; errEl.style.display='block'; return; }
+
+  try {
+    const res  = await fetch('/.netlify/functions/ledger-transaction-create', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ type:'withdrawal', asset, amount, address, network: network||null }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Request failed');
+
+    sucEl.textContent = `✓ Withdrawal of ${fmt.asset(data.transaction.amount, asset)} submitted. Status: ${data.transaction.status}. Fee: ${fmt.usd(data.transaction.fee_usd)}.`;
+    sucEl.style.display = 'block';
+    document.getElementById('wd-amount').value = '';
+    document.getElementById('wd-address').value = '';
+    renderBalanceList('wd-balance-list');
+    loadOverview();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Transaction history ───────────────────────────────────────────────────────
+let histPage = 1;
+async function loadHistory(page = 1) {
+  histPage = page;
+  const type   = document.getElementById('hist-type')?.value   || '';
+  const asset  = document.getElementById('hist-asset')?.value  || '';
+  const status = document.getElementById('hist-status')?.value || '';
+  const params = new URLSearchParams({ page, limit:20, ...(type&&{type}), ...(asset&&{asset}), ...(status&&{status}) });
+  const tbody  = document.getElementById('hist-rows');
+  tbody.innerHTML = `<tr><td colspan="6" style="padding:20px 0;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">Loading…</td></tr>`;
+
+  try {
+    const res  = await fetch(`/.netlify/functions/ledger-transaction-history?${params}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error();
+
+    const { transactions, pagination } = data;
+    document.getElementById('hist-count').textContent = `${pagination.total} transaction${pagination.total!==1?'s':''}`;
+
+    if (!transactions.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="padding:20px 0;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">No transactions found</td></tr>`;
+    } else {
+      tbody.innerHTML = transactions.map(t => {
+        const isIn = t.type === 'deposit';
+        const badgeCls = { completed:'s-completed', pending:'s-pending', processing:'s-pending', failed:'s-pending' }[t.status] || 's-pending';
+        return `<tr style="border-bottom:1px solid rgba(201,168,76,.05)">
+          <td style="padding:14px 0;font-family:'DM Mono',monospace;font-size:11px;color:var(--gray)">${fmt.date(t.created_at)}</td>
+          <td style="padding:14px 12px;font-family:'DM Mono',monospace;font-size:11px">${isIn?'⬆':'⬇'} ${t.type}</td>
+          <td style="padding:14px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--gold)">${t.asset}</td>
+          <td style="padding:14px 12px;font-family:'DM Mono',monospace;font-size:12px;color:${isIn?'var(--green)':'var(--red)'}">${isIn?'+':'-'}${fmt.asset(t.amount, t.asset)}</td>
+          <td style="padding:14px 12px;font-family:'DM Mono',monospace;font-size:12px">${t.usd_value ? fmt.usd(t.usd_value) : '—'}</td>
+          <td style="padding:14px 0"><span class="status-badge ${badgeCls}">${t.status}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Pagination controls
+    const pag = document.getElementById('hist-pagination');
+    pag.innerHTML = `
+      <button onclick="loadHistory(${page-1})" ${!pagination.has_prev?'disabled':''} style="font-family:'DM Mono',monospace;font-size:10px;color:${pagination.has_prev?'var(--gold)':'var(--gray)'};border:1px solid var(--border);padding:7px 14px;background:none;cursor:pointer">← Prev</button>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray)">Page ${pagination.page} of ${pagination.total_pages}</span>
+      <button onclick="loadHistory(${page+1})" ${!pagination.has_next?'disabled':''} style="font-family:'DM Mono',monospace;font-size:10px;color:${pagination.has_next?'var(--gold)':'var(--gray)'};border:1px solid var(--border);padding:7px 14px;background:none;cursor:pointer">Next →</button>`;
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px 0;color:var(--red);font-family:'DM Mono',monospace;font-size:11px">Failed to load history</td></tr>`;
+  }
+}
+
+// ── Portfolio panel ───────────────────────────────────────────────────────────
+async function loadPortfolio() {
+  try {
+    const res  = await fetch('/.netlify/functions/ledger-balance', { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const { balances, totals, allocations } = data;
+    document.getElementById('p-total').textContent     = fmt.usd(totals.total_usd);
+    document.getElementById('p-invested').textContent  = fmt.usd(totals.invested_usd);
+    document.getElementById('p-available').textContent = fmt.usd(totals.available_usd);
+    document.getElementById('p-return').textContent    = '+' + fmt.usd(totals.total_return_usd);
+
+    // Asset breakdown
+    document.getElementById('asset-breakdown').innerHTML = balances.map(b => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(201,168,76,.07)">
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold)">${b.asset}</div>
+        <div style="text-align:right">
+          <div style="font-family:'DM Mono',monospace;font-size:12px">${fmt.asset(b.amount, b.asset)}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray)">${b.usd_value!=null ? fmt.usd(b.usd_value) : '—'}</div>
+        </div>
+      </div>`).join('');
+
+    // Strategy breakdown
+    const stratColors = { long_short:'var(--gold)', defi_yield:'#6495ed', quant_arb:'var(--green)' };
+    document.getElementById('strategy-breakdown').innerHTML = allocations.map(a => `
+      <div style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;text-transform:capitalize">${a.strategy.replace('_',' ')}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray)">${fmt.usd(a.usd_value)} · ${a.pct}%</span>
+        </div>
+        <div style="height:4px;background:var(--navy-light);border-radius:2px"><div style="height:100%;border-radius:2px;background:${stratColors[a.strategy]||'var(--gold)'};width:${a.pct}%"></div></div>
+      </div>`).join('');
+  } catch (e) { console.warn('loadPortfolio error', e); }
+}
+
+// ── Sidebar navigation ────────────────────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + name).style.display = 'block';
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  const link = [...document.querySelectorAll('.sidebar-link')].find(l => l.getAttribute('onclick')?.includes(`'${name}'`));
+  if (link) link.classList.add('active');
+
+  // Lazy-load panel data
+  if (name === 'history')   loadHistory(1);
+  if (name === 'portfolio') loadPortfolio();
+  if (name === 'deposit')   renderBalanceList('balance-list');
+  if (name === 'withdraw')  renderBalanceList('wd-balance-list');
+}
+
+boot();
+</script>
+</body>
+</html>

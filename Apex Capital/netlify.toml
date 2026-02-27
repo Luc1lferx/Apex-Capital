@@ -1,0 +1,24 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Serve admin.html only to authenticated admins (Netlify can't enforce this
+# server-side without Identity — the JS auth guard handles it in-browser)
+[[redirects]]
+  from = "/admin"
+  to   = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to   = "/dashboard.html"
+  status = 200
+
+# Fallback — send unknown routes to index
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Apex Capital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#0a0f1e; --navy-mid:#111827; --navy-light:#1a2540;
+    --gold:#c9a84c; --gold-light:#e8c96a;
+    --cream:#f7f3ea; --white:#fff; --gray:#8a9ab5;
+    --border:rgba(201,168,76,0.18); --green:#4caf82; --red:#e05c5c; --blue:#6495ed;
+    --admin-accent:#9b59b6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--navy);color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+
+  /* ── TOP BAR ── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:rgba(10,15,30,.98);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);}
+  .topbar-left{display:flex;align-items:center;gap:20px;}
+  .logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--gold);text-decoration:none;}
+  .logo span{color:var(--cream);}
+  .admin-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;background:rgba(155,89,182,.15);border:1px solid rgba(155,89,182,.4);color:var(--admin-accent);padding:3px 10px;}
+  .topbar-right{display:flex;align-items:center;gap:16px;}
+  .admin-name{font-family:'DM Mono',monospace;font-size:11px;color:var(--gray);}
+  .btn-signout{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);border:1px solid var(--border);padding:6px 14px;background:none;cursor:pointer;text-decoration:none;transition:color .2s,border-color .2s;}
+  .btn-signout:hover{color:var(--red);border-color:var(--red);}
+
+  /* ── LAYOUT ── */
+  .layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 53px);}
+
+  /* ── SIDEBAR ── */
+  .sidebar{background:var(--navy-mid);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;}
+  .nav-section{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(138,154,181,.4);padding:0 20px;margin:20px 0 8px;}
+  .nav-section:first-child{margin-top:0;}
+  .nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--gray);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .15s,color .15s;position:relative;}
+  .nav-link:hover{background:rgba(201,168,76,.04);color:var(--cream);}
+  .nav-link.active{background:rgba(201,168,76,.07);color:var(--gold);border-right:2px solid var(--gold);}
+  .nav-icon{font-size:14px;opacity:.7;width:18px;text-align:center;}
+  .nav-count{margin-left:auto;font-size:9px;background:var(--navy-light);border:1px solid var(--border);padding:1px 7px;border-radius:10px;}
+
+  /* ── MAIN ── */
+  main{padding:32px 40px;overflow-x:auto;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ── PAGE HEADER ── */
+  .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px;}
+  .page-title-group{}
+  .page-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--admin-accent);margin-bottom:6px;}
+  .page-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:var(--white);}
+
+  /* ── STAT CARDS ── */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+  .stat-card{background:var(--navy-mid);border:1px solid var(--border);padding:20px 22px;position:relative;overflow:hidden;}
+  .stat-card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold);}
+  .stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:8px;}
+  .stat-value{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;color:var(--white);}
+  .stat-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-top:4px;}
+
+  /* ── TOOLBAR ── */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;}
+  .search-input{background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:8px 14px;font-family:'DM Mono',monospace;font-size:11px;outline:none;min-width:220px;transition:border-color .2s;}
+  .search-input:focus{border-color:var(--gold);}
+  .filter-select{background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer;}
+  .btn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;border:none;cursor:pointer;transition:background .2s,transform .15s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn-gold{background:var(--gold);color:var(--navy);}
+  .btn-gold:hover{background:var(--gold-light);}
+  .btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--border);}
+  .btn-ghost:hover{border-color:var(--gold);background:rgba(201,168,76,.06);}
+  .btn-danger{background:rgba(224,92,92,.15);color:var(--red);border:1px solid rgba(224,92,92,.3);}
+  .btn-danger:hover{background:rgba(224,92,92,.25);}
+  .btn-sm{padding:5px 12px;font-size:9px;}
+
+  /* ── TABLE ── */
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;min-width:700px;}
+  thead tr{border-bottom:1px solid var(--border);background:rgba(10,15,30,.6);}
+  th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);padding:12px 16px;text-align:left;font-weight:400;white-space:nowrap;}
+  td{padding:14px 16px;font-size:13px;border-bottom:1px solid rgba(201,168,76,.05);}
+  tbody tr:hover td{background:rgba(201,168,76,.025);}
+  tbody tr:last-child td{border-bottom:none;}
+  .mono{font-family:'DM Mono',monospace;font-size:12px;}
+  .truncate{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* ── BADGES ── */
+  .badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border:1px solid;display:inline-block;}
+  .badge-green{background:rgba(76,175,130,.1);color:var(--green);border-color:rgba(76,175,130,.25);}
+  .badge-gold{background:rgba(201,168,76,.1);color:var(--gold);border-color:rgba(201,168,76,.25);}
+  .badge-red{background:rgba(224,92,92,.1);color:var(--red);border-color:rgba(224,92,92,.25);}
+  .badge-blue{background:rgba(100,149,237,.1);color:var(--blue);border-color:rgba(100,149,237,.25);}
+  .badge-gray{background:rgba(138,154,181,.1);color:var(--gray);border-color:rgba(138,154,181,.2);}
+  .badge-purple{background:rgba(155,89,182,.1);color:var(--admin-accent);border-color:rgba(155,89,182,.25);}
+
+  /* ── PAGINATION ── */
+  .pagination{display:flex;align-items:center;justify-content:space-between;margin-top:16px;font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);}
+
+  /* ── MODAL ── */
+  .modal-bg{position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--navy-mid);border:1px solid var(--border);padding:36px;width:90%;max-width:460px;position:relative;animation:fadeUp .3s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;margin-bottom:6px;}
+  .modal-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);letter-spacing:1px;margin-bottom:24px;}
+  .modal-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;transition:color .2s;}
+  .modal-close:hover{color:var(--red);}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .field label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);}
+  .field input,.field select,.field textarea{background:var(--navy-light);border:1px solid var(--border);color:var(--cream);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;width:100%;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+  .field textarea{resize:vertical;min-height:80px;}
+  .modal-error{display:none;padding:8px 12px;border:1px solid rgba(224,92,92,.3);background:rgba(224,92,92,.06);font-family:'DM Mono',monospace;font-size:11px;color:var(--red);margin-bottom:12px;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+  /* ── USER DETAIL DRAWER ── */
+  .drawer-bg{position:fixed;inset:0;background:rgba(10,15,30,.7);z-index:400;display:none;}
+  .drawer-bg.open{display:block;}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--navy-mid);border-left:1px solid var(--border);z-index:401;overflow-y:auto;transform:translateX(100%);transition:transform .3s ease;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .drawer-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;}
+  .drawer-close{background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;}
+  .drawer-body{padding:24px 28px;}
+  .drawer-section{margin-bottom:28px;}
+  .drawer-section-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(201,168,76,.06);}
+  .info-row:last-child{border-bottom:none;}
+  .info-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);}
+  .info-value{font-family:'DM Mono',monospace;font-size:11px;text-align:right;}
+
+  /* ── LOADING ── */
+  .loading{text-align:center;padding:48px;font-family:'DM Mono',monospace;font-size:11px;color:var(--gray);letter-spacing:2px;}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:28px;right:28px;background:var(--navy-mid);border:1px solid var(--border);padding:14px 20px;font-family:'DM Mono',monospace;font-size:11px;z-index:600;display:none;animation:fadeUp .3s ease;max-width:360px;}
+  .toast.show{display:block;}
+  .toast.success{border-color:rgba(76,175,130,.4);color:var(--green);}
+  .toast.error{border-color:rgba(224,92,92,.4);color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo">Apex<span>Capital</span></a>
+    <span class="admin-badge">Admin Console</span>
+  </div>
+  <div class="topbar-right">
+    <span class="admin-name" id="admin-name">—</span>
+    <a href="/.netlify/functions/auth-logout" class="btn-signout">Sign Out</a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="nav-section">Management</div>
+    <button class="nav-link active" onclick="showPanel('users')"><span class="nav-icon">👥</span>Users<span class="nav-count" id="nc-users">—</span></button>
+    <button class="nav-link" onclick="showPanel('transactions')"><span class="nav-icon">↕</span>Transactions<span class="nav-count" id="nc-txs">—</span></button>
+    <button class="nav-link" onclick="showPanel('kyc')"><span class="nav-icon">✓</span>KYC Review</button>
+    <div class="nav-section">System</div>
+    <button class="nav-link" onclick="showPanel('audit')"><span class="nav-icon">📋</span>Audit Log</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ── USERS PANEL ── -->
+    <div class="panel active" id="panel-users">
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Management</div>
+          <div class="page-title">Users & Balances</div>
+        </div>
+      </div>
+      <div class="stat-row" id="user-stats">
+        <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="s-total-users">—</div></div>
+        <div class="stat-card"><div class="stat-label">Verified KYC</div><div class="stat-value" id="s-verified">—</div></div>
+        <div class="stat-card"><div class="stat-label">Pending KYC</div><div class="stat-value" id="s-pending">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total AUM (USD)</div><div class="stat-value" id="s-aum">—</div></div>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" id="user-search" placeholder="Search email or name…" oninput="debounce(loadUsers,400)()">
+        <select class="filter-select" id="user-kyc-filter" onchange="loadUsers()">
+          <option value="">All KYC</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>User</th><th>Email</th><th>KYC</th>
+            <th>Total Balance</th><th>Joined</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="users-pag"></div>
+    </div>
+
+    <!-- ── TRANSACTIONS PANEL ── -->
+    <div class="panel" id="panel-transactions">
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Management</div>
+          <div class="page-title">Transactions</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <select class="filter-select" id="tx-type-filter" onchange="loadTransactions()">
+          <option value="">All Types</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option>
+        </select>
+        <select class="filter-select" id="tx-status-filter" onchange="loadTransactions()">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <select class="filter-select" id="tx-asset-filter" onchange="loadTransactions()">
+          <option value="">All Assets</option>
+          <option>BTC</option><option>ETH</option><option>USDT</option><option>USDC</option><option>SOL</option>
+        </select>
+        <span id="tx-count" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-left:auto"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>User</th><th>Type</th><th>Asset</th>
+            <th>Amount</th><th>USD Value</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="txs-tbody"><tr><td colspan="8" class="loading"><span class="spinner"></span>Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="txs-pag"></div>
+    </div>
+
+    <!-- ── KYC PANEL ── -->
+    <div class="panel" id="panel-kyc">
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Compliance</div>
+          <div class="page-title">KYC Review</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <select class="filter-select" id="kyc-filter" onchange="loadKYC()" style="min-width:160px">
+          <option value="pending">Pending Review</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+          <option value="">All Users</option>
+        </select>
+        <span id="kyc-count" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-left:auto"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>User</th><th>Email</th><th>Current Status</th><th>Balance (USD)</th><th>Joined</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="kyc-tbody"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="kyc-pag"></div>
+    </div>
+
+    <!-- ── AUDIT LOG PANEL ── -->
+    <div class="panel" id="panel-audit">
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">System</div>
+          <div class="page-title">Audit Log</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <select class="filter-select" id="audit-action-filter" onchange="loadAudit()">
+          <option value="">All Actions</option>
+          <option value="login">Login</option>
+          <option value="deposit_initiated">Deposit</option>
+          <option value="withdrawal_initiated">Withdrawal</option>
+          <option value="admin_balance_adjustment">Balance Adjustment</option>
+          <option value="admin_transaction_status_update">Tx Status Update</option>
+          <option value="admin_kyc_update">KYC Update</option>
+        </select>
+        <span id="audit-count" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray);margin-left:auto"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Timestamp</th><th>User</th><th>Action</th><th>IP Address</th><th>Device</th><th>Detail</th>
+          </tr></thead>
+          <tbody id="audit-tbody"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="audit-pag"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── BALANCE ADJUST MODAL ── -->
+<div class="modal-bg" id="modal-balance">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-balance')">✕</button>
+    <div class="modal-title">Adjust Balance</div>
+    <div class="modal-sub" id="bal-modal-sub">User · Asset</div>
+    <input type="hidden" id="bal-user-id">
+    <div class="field">
+      <label>Asset</label>
+      <select id="bal-asset">
+        <option value="BTC">Bitcoin (BTC)</option><option value="ETH">Ethereum (ETH)</option>
+        <option value="USDT">Tether (USDT)</option><option value="USDC">USD Coin (USDC)</option>
+        <option value="SOL">Solana (SOL)</option><option value="USD">USD</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Delta (positive = credit, negative = debit)</label>
+      <input type="number" id="bal-delta" placeholder="e.g. 0.5 or -0.5" step="any">
+    </div>
+    <div class="field">
+      <label>Reason (required for audit trail)</label>
+      <textarea id="bal-reason" placeholder="e.g. Manual correction for deposit #xyz…"></textarea>
+    </div>
+    <div class="modal-error" id="bal-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-balance')">Cancel</button>
+      <button class="btn btn-gold" onclick="submitBalanceAdjust()">Apply Adjustment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TX STATUS MODAL ── -->
+<div class="modal-bg" id="modal-tx">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-tx')">✕</button>
+    <div class="modal-title">Update Transaction</div>
+    <div class="modal-sub" id="tx-modal-sub">Transaction ID</div>
+    <input type="hidden" id="tx-modal-id">
+    <div class="field">
+      <label>New Status</label>
+      <select id="tx-new-status">
+        <option value="completed">Completed</option>
+        <option value="processing">Processing</option>
+        <option value="failed">Failed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Admin Notes (optional)</label>
+      <textarea id="tx-notes" placeholder="Reason for status change…"></textarea>
+    </div>
+    <div class="modal-error" id="tx-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-tx')">Cancel</button>
+      <button class="btn btn-gold" onclick="submitTxUpdate()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── KYC MODAL ── -->
+<div class="modal-bg" id="modal-kyc">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-kyc')">✕</button>
+    <div class="modal-title">Update KYC Status</div>
+    <div class="modal-sub" id="kyc-modal-sub">User</div>
+    <input type="hidden" id="kyc-user-id">
+    <div class="field">
+      <label>KYC Status</label>
+      <select id="kyc-new-status">
+        <option value="verified">Verified ✓</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected ✗</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="kyc-notes" placeholder="e.g. Documents verified, passport + proof of address…"></textarea>
+    </div>
+    <div class="modal-error" id="kyc-error"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-kyc')">Cancel</button>
+      <button class="btn btn-gold" onclick="submitKYCUpdate()">Save Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const fmt = {
+  usd:  n  => '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),
+  date: s  => new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),
+  time: s  => new Date(s).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),
+  asset:(n,sym) => Number(n).toFixed(['BTC','ETH','SOL'].includes(sym)?6:2)+' '+sym,
+};
+
+function kycBadge(s) {
+  const map = { verified:'badge-green', pending:'badge-gold', rejected:'badge-red' };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+function statusBadge(s) {
+  const map = { completed:'badge-green', pending:'badge-gold', processing:'badge-blue', failed:'badge-red', cancelled:'badge-gray' };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+function actionBadge(a) {
+  if (a.startsWith('admin_')) return `<span class="badge badge-purple">${a.replace(/_/g,' ')}</span>`;
+  if (a==='login')            return `<span class="badge badge-blue">login</span>`;
+  if (a.includes('deposit'))  return `<span class="badge badge-green">${a.replace(/_/g,' ')}</span>`;
+  if (a.includes('withdraw')) return `<span class="badge badge-gold">${a.replace(/_/g,' ')}</span>`;
+  return `<span class="badge badge-gray">${a.replace(/_/g,' ')}</span>`;
+}
+
+// Debounce
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// Toast
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type==='success'?'✓ ':'✕ ') + msg;
+  el.className   = `toast show ${type}`;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// Modal
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Pagination renderer
+function renderPagination(pagEl, pagination, loadFn) {
+  pagEl.innerHTML = `
+    <span style="color:var(--gray)">${pagination.total} total</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="${loadFn}(${pagination.page-1})" ${!pagination.has_prev?'disabled style="opacity:.3"':''}>← Prev</button>
+      <span>Page ${pagination.page} / ${pagination.total_pages}</span>
+      <button class="btn btn-ghost btn-sm" onclick="${loadFn}(${pagination.page+1})" ${!pagination.has_next?'disabled style="opacity:.3"':''}>Next →</button>
+    </div>`;
+}
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res  = await fetch('/.netlify/functions/auth-user', { credentials:'include' });
+    const json = await res.json();
+    if (!json.ok || !json.user)      { location.href = '/'; return; }
+    if (!json.user.isAdmin)          { location.href = '/dashboard.html'; return; }
+    document.getElementById('admin-name').textContent = json.user.name || json.user.email;
+    loadUsers();
+  } catch { location.href = '/'; }
+}
+
+// ── Panel navigation ──────────────────────────────────────────────────────────
+const loaders = { users: ()=>loadUsers(), transactions: ()=>loadTransactions(), kyc: ()=>loadKYC(), audit: ()=>loadAudit() };
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  [...document.querySelectorAll('.nav-link')].find(l => l.getAttribute('onclick')?.includes(`'${name}'`))?.classList.add('active');
+  loaders[name]?.();
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+let usersPage = 1;
+async function loadUsers(page = 1) {
+  usersPage = page;
+  const search = document.getElementById('user-search').value.trim();
+  const kyc    = document.getElementById('user-kyc-filter').value;
+  const params = new URLSearchParams({ page, limit:20, ...(search&&{search}), ...(kyc&&{kyc_status:kyc}) });
+  document.getElementById('users-tbody').innerHTML = `<tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr>`;
+
+  try {
+    const res  = await fetch(`/.netlify/functions/admin-users?${params}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const { users, pagination } = data;
+    document.getElementById('nc-users').textContent     = pagination.total;
+    document.getElementById('s-total-users').textContent = pagination.total;
+
+    // Stats — count by KYC from current full set
+    const vRow = await fetch(`/.netlify/functions/admin-users?limit=1&kyc_status=verified`, { credentials:'include' });
+    const vData = await vRow.json();
+    const pRow  = await fetch(`/.netlify/functions/admin-users?limit=1&kyc_status=pending`, { credentials:'include' });
+    const pData = await pRow.json();
+    if (vData.ok) document.getElementById('s-verified').textContent = vData.pagination?.total || '—';
+    if (pData.ok) document.getElementById('s-pending').textContent  = pData.pagination?.total || '—';
+    const totalAum = users.reduce((s,u) => s + (u.total_usd||0), 0);
+    document.getElementById('s-aum').textContent = fmt.usd(totalAum);
+
+    if (!users.length) {
+      document.getElementById('users-tbody').innerHTML = `<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">No users found</td></tr>`;
+    } else {
+      document.getElementById('users-tbody').innerHTML = users.map(u => `<tr>
+        <td>
+          <div style="font-weight:400">${u.name || '—'}</div>
+          <div class="mono" style="color:var(--gray);font-size:10px">${u.auth0_sub?.substring(0,20)}…</div>
+        </td>
+        <td class="mono" style="color:var(--gold)">${u.email}</td>
+        <td>${kycBadge(u.kyc_status)}</td>
+        <td class="mono" style="color:${u.total_usd>0?'var(--cream)':'var(--gray)'}">${fmt.usd(u.total_usd)}</td>
+        <td class="mono" style="color:var(--gray);font-size:11px">${fmt.date(u.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="openBalanceModal('${u.id}','${u.email}')">Adjust Balance</button>
+            <button class="btn btn-ghost btn-sm" onclick="openKYCModal('${u.id}','${u.email}','${u.kyc_status}')">KYC</button>
+          </div>
+        </td>
+      </tr>`).join('');
+    }
+
+    renderPagination(document.getElementById('users-pag'), pagination, 'loadUsers');
+  } catch(e) {
+    document.getElementById('users-tbody').innerHTML = `<tr><td colspan="6" style="padding:20px;color:var(--red);font-family:'DM Mono',monospace;font-size:11px">${e.message}</td></tr>`;
+  }
+}
+
+// ── TRANSACTIONS ──────────────────────────────────────────────────────────────
+let txsPage = 1;
+async function loadTransactions(page = 1) {
+  txsPage = page;
+  const type   = document.getElementById('tx-type-filter').value;
+  const status = document.getElementById('tx-status-filter').value;
+  const asset  = document.getElementById('tx-asset-filter').value;
+  const params = new URLSearchParams({ page, limit:20, ...(type&&{type}), ...(status&&{status}), ...(asset&&{asset}) });
+  document.getElementById('txs-tbody').innerHTML = `<tr><td colspan="8" class="loading"><span class="spinner"></span>Loading…</td></tr>`;
+
+  try {
+    // Use the existing ledger history endpoint — it returns all txs for the admin since admin provisioned user covers all
+    // Better: query Supabase directly via admin endpoint. We'll fetch all from ledger-transaction-history with admin cookie.
+    const res  = await fetch(`/.netlify/functions/ledger-transaction-history?${params}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const { transactions, pagination } = data;
+    document.getElementById('nc-txs').textContent   = pagination.total;
+    document.getElementById('tx-count').textContent = `${pagination.total} transaction${pagination.total!==1?'s':''}`;
+
+    if (!transactions.length) {
+      document.getElementById('txs-tbody').innerHTML = `<tr><td colspan="8" style="padding:28px;text-align:center;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">No transactions found</td></tr>`;
+    } else {
+      document.getElementById('txs-tbody').innerHTML = transactions.map(t => `<tr>
+        <td class="mono" style="font-size:11px;color:var(--gray)">${fmt.time(t.created_at)}</td>
+        <td class="mono" style="font-size:11px;color:var(--gray)">${t.user_id?.substring(0,8)}…</td>
+        <td><span style="color:${t.type==='deposit'?'var(--green)':'var(--gold)'}">${t.type==='deposit'?'⬆':'⬇'} ${t.type}</span></td>
+        <td class="mono" style="color:var(--gold)">${t.asset}</td>
+        <td class="mono">${fmt.asset(t.amount, t.asset)}</td>
+        <td class="mono">${t.usd_value ? fmt.usd(t.usd_value) : '—'}</td>
+        <td>${statusBadge(t.status)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="openTxModal('${t.id}','${t.status}','${t.type} ${t.amount} ${t.asset}')">Update</button></td>
+      </tr>`).join('');
+    }
+
+    renderPagination(document.getElementById('txs-pag'), pagination, 'loadTransactions');
+  } catch(e) {
+    document.getElementById('txs-tbody').innerHTML = `<tr><td colspan="8" style="padding:20px;color:var(--red);font-family:'DM Mono',monospace;font-size:11px">${e.message}</td></tr>`;
+  }
+}
+
+// ── KYC ───────────────────────────────────────────────────────────────────────
+let kycPage = 1;
+async function loadKYC(page = 1) {
+  kycPage = page;
+  const kyc    = document.getElementById('kyc-filter').value;
+  const params = new URLSearchParams({ page, limit:20, ...(kyc&&{kyc_status:kyc}) });
+  document.getElementById('kyc-tbody').innerHTML = `<tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr>`;
+
+  try {
+    const res  = await fetch(`/.netlify/functions/admin-users?${params}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const { users, pagination } = data;
+    document.getElementById('kyc-count').textContent = `${pagination.total} user${pagination.total!==1?'s':''}`;
+
+    if (!users.length) {
+      document.getElementById('kyc-tbody').innerHTML = `<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">No users found</td></tr>`;
+    } else {
+      document.getElementById('kyc-tbody').innerHTML = users.map(u => `<tr>
+        <td><div style="font-weight:400">${u.name||'—'}</div></td>
+        <td class="mono" style="color:var(--gold)">${u.email}</td>
+        <td>${kycBadge(u.kyc_status)}</td>
+        <td class="mono">${fmt.usd(u.total_usd)}</td>
+        <td class="mono" style="color:var(--gray);font-size:11px">${fmt.date(u.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-gold btn-sm" onclick="openKYCModal('${u.id}','${u.email}','${u.kyc_status}')">Update KYC</button>
+          </div>
+        </td>
+      </tr>`).join('');
+    }
+    renderPagination(document.getElementById('kyc-pag'), pagination, 'loadKYC');
+  } catch(e) {
+    document.getElementById('kyc-tbody').innerHTML = `<tr><td colspan="6" style="padding:20px;color:var(--red);font-family:'DM Mono',monospace;font-size:11px">${e.message}</td></tr>`;
+  }
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────────────────
+let auditPage = 1;
+async function loadAudit(page = 1) {
+  auditPage = page;
+  const action = document.getElementById('audit-action-filter').value;
+  const params = new URLSearchParams({ page, limit:50, ...(action&&{action}) });
+  document.getElementById('audit-tbody').innerHTML = `<tr><td colspan="6" class="loading"><span class="spinner"></span>Loading…</td></tr>`;
+
+  try {
+    const res  = await fetch(`/.netlify/functions/admin-audit-log?${params}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const { entries, pagination } = data;
+    document.getElementById('audit-count').textContent = `${pagination.total} entries`;
+
+    if (!entries.length) {
+      document.getElementById('audit-tbody').innerHTML = `<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--gray);font-family:'DM Mono',monospace;font-size:11px">No audit entries found</td></tr>`;
+    } else {
+      document.getElementById('audit-tbody').innerHTML = entries.map(e => {
+        const meta = e.meta || {};
+        const detail = meta.asset
+          ? `${meta.asset} ${meta.amount||meta.delta||''}`
+          : meta.new_status
+          ? `→ ${meta.new_status}`
+          : '';
+        return `<tr>
+          <td class="mono" style="font-size:10px;color:var(--gray);white-space:nowrap">${fmt.time(e.created_at)}</td>
+          <td>
+            <div class="mono" style="font-size:11px">${e.user_email||'—'}</div>
+          </td>
+          <td>${actionBadge(e.action)}</td>
+          <td class="mono" style="font-size:11px;color:var(--gray)">${e.ip_address||'—'}</td>
+          <td class="truncate mono" style="font-size:10px;color:var(--gray)" title="${e.user_agent||''}">${(e.user_agent||'').substring(0,40)}…</td>
+          <td class="mono" style="font-size:11px;color:var(--gold)">${detail}</td>
+        </tr>`;
+      }).join('');
+    }
+    renderPagination(document.getElementById('audit-pag'), pagination, 'loadAudit');
+  } catch(e) {
+    document.getElementById('audit-tbody').innerHTML = `<tr><td colspan="6" style="padding:20px;color:var(--red);font-family:'DM Mono',monospace;font-size:11px">${e.message}</td></tr>`;
+  }
+}
+
+// ── MODAL OPENERS ─────────────────────────────────────────────────────────────
+function openBalanceModal(userId, email) {
+  document.getElementById('bal-user-id').value     = userId;
+  document.getElementById('bal-modal-sub').textContent = email;
+  document.getElementById('bal-delta').value       = '';
+  document.getElementById('bal-reason').value      = '';
+  document.getElementById('bal-error').style.display = 'none';
+  openModal('modal-balance');
+}
+
+function openTxModal(txId, currentStatus, label) {
+  document.getElementById('tx-modal-id').value       = txId;
+  document.getElementById('tx-modal-sub').textContent = label;
+  document.getElementById('tx-new-status').value     = currentStatus;
+  document.getElementById('tx-notes').value          = '';
+  document.getElementById('tx-error').style.display  = 'none';
+  openModal('modal-tx');
+}
+
+function openKYCModal(userId, email, currentStatus) {
+  document.getElementById('kyc-user-id').value        = userId;
+  document.getElementById('kyc-modal-sub').textContent = email;
+  document.getElementById('kyc-new-status').value     = currentStatus;
+  document.getElementById('kyc-notes').value          = '';
+  document.getElementById('kyc-error').style.display  = 'none';
+  openModal('modal-kyc');
+}
+
+// ── SUBMIT HANDLERS ───────────────────────────────────────────────────────────
+async function submitBalanceAdjust() {
+  const userId = document.getElementById('bal-user-id').value;
+  const asset  = document.getElementById('bal-asset').value;
+  const delta  = parseFloat(document.getElementById('bal-delta').value);
+  const reason = document.getElementById('bal-reason').value.trim();
+  const errEl  = document.getElementById('bal-error');
+  errEl.style.display = 'none';
+
+  if (!delta || isNaN(delta)) { errEl.textContent='Enter a valid delta.'; errEl.style.display='block'; return; }
+  if (!reason)                { errEl.textContent='Reason is required.';  errEl.style.display='block'; return; }
+
+  try {
+    const res  = await fetch('/.netlify/functions/admin-balance-adjust', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userId, asset, delta, reason }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    closeModal('modal-balance');
+    toast(`Balance adjusted: ${delta>0?'+':''}${delta} ${asset}. New balance: ${data.new_balance} ${asset}`);
+    loadUsers(usersPage);
+  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+async function submitTxUpdate() {
+  const txId   = document.getElementById('tx-modal-id').value;
+  const status = document.getElementById('tx-new-status').value;
+  const notes  = document.getElementById('tx-notes').value.trim();
+  const errEl  = document.getElementById('tx-error');
+  errEl.style.display = 'none';
+
+  try {
+    const res  = await fetch('/.netlify/functions/admin-transaction-update', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ transactionId: txId, status, notes }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    closeModal('modal-tx');
+    toast(`Transaction updated to "${status}"${data.refunded?' — balance refunded':''}`);
+    loadTransactions(txsPage);
+  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+async function submitKYCUpdate() {
+  const userId     = document.getElementById('kyc-user-id').value;
+  const kyc_status = document.getElementById('kyc-new-status').value;
+  const notes      = document.getElementById('kyc-notes').value.trim();
+  const errEl      = document.getElementById('kyc-error');
+  errEl.style.display = 'none';
+
+  try {
+    const res  = await fetch('/.netlify/functions/admin-kyc-update', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userId, kyc_status, notes }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    closeModal('modal-kyc');
+    toast(`KYC updated to "${kyc_status}" for ${data.email}`);
+    loadKYC(kycPage);
+    loadUsers(usersPage);
+  } catch(e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+// Close modals on background click
+document.querySelectorAll('.modal-bg').forEach(bg =>
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); })
+);
+
+boot();
+</script>
+</body>
+</html>
